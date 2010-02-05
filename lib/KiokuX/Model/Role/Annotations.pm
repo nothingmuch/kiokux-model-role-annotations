@@ -50,9 +50,9 @@ role {
     my $set_id       = $p->key_callback;
     my $object_to_id = $p->id_callback;
 
-	requires $set_id unless ref $set_id or $set_id eq "_${name}_set_id";
+    requires $set_id unless ref $set_id or $set_id eq "_${name}_set_id";
 
-	requires $object_to_id unless ref $object_to_id;
+    requires $object_to_id unless ref $object_to_id;
 
     my $annotation_set = sub {
         my ( $self, $key ) = @_;
