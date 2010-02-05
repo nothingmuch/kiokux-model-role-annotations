@@ -106,21 +106,27 @@ role {
         });
     };
 
+    my $remove_from_set = sub {
+        my ( $self, $key, @annotations ) = @_;
+
+        if ( my $set = $self->$annotation_set($key) ) {
+            $set->remove(@annotations);
+
+            if ( $set->size ) {
+                $self->update($set);
+            } else {
+                $self->delete($set);
+            }
+        }
+
+        $self->delete(@annotations);
+    };
+
     method "remove_${name}_for" => sub {
         my ( $self, $key, @annotations ) = @_;
 
         $self->txn_do(sub {
-            if ( my $set = $self->$annotation_set($key) ) {
-                $set->remove(@annotations);
-
-                if ( $set->size ) {
-                    $self->update($set);
-                } else {
-                    $self->delete($set);
-                }
-            }
-
-            $self->delete(@annotations);
+            $self->$remove_from_set( $key, @annotations );
         });
     };
 
@@ -129,17 +135,7 @@ role {
 
         $self->txn_do(sub {
             foreach my $annotation ( @annotations ) {
-                if ( my $set = $self->$annotation_set($annotation->subject) ) {
-                    $set->remove($annotation);
-
-                    if ( $set->size ) {
-                        $self->update($set);
-                    } else {
-                        $self->delete($set);
-                    }
-                }
-
-                $self->delete($annotation);
+                $self->$remove_from_set( $annotation->subject, $annotation );
             }
         });
     };
