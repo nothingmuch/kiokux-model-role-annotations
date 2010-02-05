@@ -9,6 +9,7 @@ WriteMakefile(
 	SIGN         => 1,
 	PL_FILES     => { },
 	PREREQ_PM    => {
+		'KiokuDB' => '0.35',
 		'KiokuX::Model' => 0,
 		'MooseX::Role::Parameterized' => 0,
 		'namespace::clean' => 0,
