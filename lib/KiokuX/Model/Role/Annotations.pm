@@ -76,17 +76,23 @@ role {
         }
     };
 
+    my $insert_into_set = sub {
+        my ( $self, $key, @annotations ) = @_;
+
+        if ( my $set = $self->$annotation_set($key) ) {
+            $set->insert(@annotations);
+            $self->insert_nonroot(@annotations);
+            $self->update($set);
+        } else {
+            $self->insert( $self->$set_id($key) => set(@annotations) );
+        }
+    };
+
     method "add_${name}_for" => sub {
         my ( $self, $key, @annotations ) = @_;
 
         $self->txn_do(sub {
-            if ( my $set = $self->$annotation_set($key) ) {
-                $set->insert(@annotations);
-                $self->insert_nonroot(@annotations);
-                $self->update($set);
-            } else {
-                $self->insert( $self->$set_id($key) => set(@annotations) );
-            }
+            $self->$insert_into_set( $key, @annotations );
         });
     };
 
@@ -95,13 +101,7 @@ role {
 
         $self->txn_do(sub {
             foreach my $annotation ( @annotations ) {
-                if ( my $set = $self->$annotation_set($annotation->subject) ) {
-                    $set->insert($annotation);
-                    $self->insert_nonroot($annotation);
-                    $self->update($set);
-                } else {
-                    $self->insert( $self->$set_id($annotation->subject) => set($annotation) );
-                }
+                $self->$insert_into_set( $annotation->subject, $annotation );
             }
         });
     };
