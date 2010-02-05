@@ -6,6 +6,8 @@ use KiokuDB::Util qw(set);
 
 use namespace::clean;
 
+our $VERSION = "0.01";
+
 parameter namespace => (
     isa => "Str",
     is  => "ro",
