@@ -30,11 +30,19 @@ my $m = Model->new( dsn => "hash" );
 $m->txn_do( scope => 1, body => sub { $m->insert( foo => Foo->new ) } );
 
 $m->txn_do( scope => 1, body => sub {
-    ok( !$m->exists('annotations:foo'), "no annotations yet" );
+    is_deeply( [ $m->annotations_for('foo') ], [], "no annotations" );
+
+    ok( !$m->exists('annotations:foo'), "no annotation set in DB" );
+
+    ok( !$m->has_annotations('foo'), "predicate by ID" );
+    ok( !$m->has_annotations( $m->lookup('foo') ), "predicate by object" );
 
     $m->add_annotations( Annotation->new( subject => $m->lookup("foo") ) );
 
     ok( $m->exists('annotations:foo'), "annotation set inserted" );
+
+    ok( $m->has_annotations('foo'), "predicate by ID" );
+    ok( $m->has_annotations( $m->lookup('foo') ), "predicate by object" );
 
     {
         my ( $ann ) = $m->annotations_for('foo');
@@ -63,14 +71,35 @@ $m->txn_do( scope => 1, body => sub {
     {
         my @ann = $m->annotations_for('foo');
 
-        is( scalar(@ann), 3, "two annotations" );
+        is( scalar(@ann), 3, "three annotations" );
 
         is_deeply( [ sort map { ref } @ann ], [qw(Annotation Annotation Foo)], "arbitrary annotation objects" );
+    }
+
+    ok( $m->has_annotations('foo'), "predicate by ID" );
+    ok( $m->has_annotations( $m->lookup('foo') ), "predicate by object" );
+
+    $m->remove_annotations( grep { $_->does("KiokuX::Model::Role::Annotations::Annotation") } $m->annotations_for("foo") );
+
+    ok( $m->has_annotations('foo'), "predicate by ID" );
+    ok( $m->has_annotations( $m->lookup('foo') ), "predicate by object" );
+
+    {
+        my @ann = $m->annotations_for('foo');
+
+        is( scalar(@ann), 1, "one annotation" );
+
+        is_deeply( [ sort map { ref } @ann ], [qw(Foo)], "arbitrary annotation objects" );
     }
 
     $m->remove_annotations_for( $m->lookup("foo"), $m->annotations_for("foo") );
     
     ok( !$m->exists('annotations:foo'), "no annotation set in DB after removal" );
+
+    ok( !$m->has_annotations('foo'), "predicate by ID" );
+    ok( !$m->has_annotations( $m->lookup('foo') ), "predicate by object" );
+
+    is_deeply( [ $m->annotations_for('foo') ], [], "no annotations" );
 });
 
 done_testing;
